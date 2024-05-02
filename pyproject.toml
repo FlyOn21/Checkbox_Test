@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "testtaskcheckbox"
+version = "0.1.0"
+description = "Test task from Checkbox using FastApi"
+authors = ["Zhoholiev Pavlo <zhogolevpv@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.3"
+uvicorn = {extras = ["standard"], version = "^0.23.1"}
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.20"}
+pydantic = "^2.7.1"
+alembic = "1.13.1"
+redis = "5.0.4"
+orjson = "^3.10.2"
+pydantic-settings = "^2.2.1"
+asyncpg = "^0.29.0"
+fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
+loguru = "^0.7.2"
+gunicorn = "^22.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+mypy = "^1.10.0"
+black = "^24.4.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+ignore_missing_imports = true
+exclude = ['venv', 'docker', 'tests']
+
+[tool.black]
+line-length = 120
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | venv
+    | docker
+  )/
+
+)
+'''
+
