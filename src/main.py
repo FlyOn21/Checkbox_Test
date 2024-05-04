@@ -1,49 +1,33 @@
+from typing import Annotated
+
 from fastapi import FastAPI, Depends
-from starlette.responses import RedirectResponse
 
-from src.services.auth.auth import fastapi_users
 from starlette.middleware.cors import CORSMiddleware
-from src.services.auth.auth import auth_backend
-from src.models.user_model import User
-from src.services.auth.schemas.user_auth import UserRead, UserCreate, UserUpdate
-from src.services.auth.auth import current_user
 
-app = FastAPI(title="CheckBox")
+from src.middleware.http_error_handling_middleware import ExceptionHandlerMiddleware
+from src.services.auth.auth_router import oauth_router
+from src.services.checks.check_router import check_router
+from src.utils.logging.set_logging import set_logger
+from src.settings.checkbox_settings import settings
 
+logger = set_logger()
 
-@app.get("/")
-def base_route_redirect():
-    return RedirectResponse(url="/docs")
-
-
-app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["Auth"])
-
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["Auth"],
+app = FastAPI(
+    root_path=settings.api_prefix,
+    openapi_prefix=settings.api_prefix,
+    title="CheckBox",
+    description="CheckBox API",
+    docs_url="/",
+    swagger_ui_oauth2_redirect_url="/oauth2-redirect",
 )
 
-app.include_router(
-    fastapi_users.get_reset_password_router(),
-    prefix="/auth",
-    tags=["Auth"],
-)
+app.include_router(oauth_router)
+app.include_router(check_router)
 
 
+origins = ["*"]
 
-@app.get("/protected-route")
-def protected_route(user: "User" = Depends(current_user)):
-    return f"Hello, {user.username}"
-
-
-@app.get("/unprotected-route")
-def unprotected_route():
-    return f"Hello, anonym"
-
-
-origins = ["http://localhost:8000"]
-
+app.add_middleware(ExceptionHandlerMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

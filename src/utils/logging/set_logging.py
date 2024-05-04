@@ -16,7 +16,6 @@ def set_logger(level: str = "INFO", serialize: bool = False):
                 "sink": sys.stdout,
                 "serialize": serialize,
                 "level": level,
-                "format": "{time} - {level} - {message} - {module} - {line} - {function}",
             }
         ]
     )

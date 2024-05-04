@@ -1,8 +1,6 @@
 import logging
 from subprocess import Popen, PIPE, STDOUT
 from gunicorn.app.base import BaseApplication
-from loguru import logger
-from gunicorn.glogging import Logger
 from src.settings import settings
 from src.main import app
 

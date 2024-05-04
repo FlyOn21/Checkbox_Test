@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     fastapi_port: str
     jwt_secret_signature: SecretStr
     api_prefix: str
+    algorithm: str
+    jwt_expire_time: int
 
     def get_db_url(self) -> str:
         if self.local_development:
