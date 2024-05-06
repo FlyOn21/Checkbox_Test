@@ -2,9 +2,9 @@ from asyncio import current_task
 from typing import AsyncGenerator
 
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_scoped_session, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_scoped_session, async_sessionmaker
+
 from src.settings import settings
 from src.utils.logging.set_logging import set_logger
 

@@ -1,6 +1,7 @@
-import logging
 from subprocess import Popen, PIPE, STDOUT
+
 from gunicorn.app.base import BaseApplication
+
 from src.settings import settings
 from src.main import app
 
@@ -27,16 +28,22 @@ if __name__ == "__main__":
     # Initialize application options
     options = {
         "bind": f"{settings.fastapi_host}:{settings.fastapi_port}",
-        "workers": settings.gunicorn_workers,
+        "workers": 1,
         "accesslog": "-",
         "errorlog": "-",
         "worker_class": "uvicorn.workers.UvicornWorker",
         "reload": settings.local_development,
     }
 
-    if settings.local_development:
-        cmd = "alembic upgrade head"
-        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    cmd = "alembic upgrade head || echo 'command failed' && true"
+    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    output, _ = p.communicate()
+
+    if p.returncode == 0:
+        print("upgrade head success")
+    else:
+        print("upgrade head failed")
+        print("Output:", output.decode())
 
     # Run the application
     StandaloneApplication(app, options).run()

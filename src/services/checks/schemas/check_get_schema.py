@@ -7,6 +7,8 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_core import Url
 
+from src.services.checks.schemas.checks_schemas import ReadCheck
+
 
 class BaseGetCheck(BaseModel):
     model_config = ConfigDict(
@@ -17,15 +19,15 @@ class BaseGetCheck(BaseModel):
         title="checks",
         description="The list of checks",
     )
-    pagination: Optional["Pagination"] = Field(
+    pagination: Optional["PaginationInfo"] = Field(
         title="pagination",
         description="Pagination information",
     )
 
 
-class Pagination(BaseModel):
+class PaginationInfo(BaseModel):
     model_config = ConfigDict(
-        title="Pagination",
+        title="PaginationInfo",
     )
     total_pages: int = Field(
         title="totalPages",
@@ -39,6 +41,42 @@ class Pagination(BaseModel):
     next_page: Optional[int] = Field(
         title="nextPage",
         description="The next page number",
+    )
+
+
+class Pagination(BaseModel):
+    model_config = ConfigDict(
+        title="Pagination",
+    )
+    pagination_info: PaginationInfo = Field(
+        title="paginationInfo",
+        description="Pagination information",
+        example=[{"next_page": "2", "previous_page": "None", "total_elements": "15", "total_pages": "8"}],
+    )
+    checks: List["ReadCheck"] = Field(
+        title="checks",
+        description="The list of checks",
+        examples=[
+            {
+                "check_products": [
+                    {
+                        "product_discount": "7",
+                        "product_id": "86e03105-324b-4e20-a3db-7caa0fe3d3b4",
+                        "product_name": "product1",
+                        "product_price": "100.00",
+                        "product_quantity": "2.0",
+                        "product_total_price": "200.00",
+                        "product_units": "kilogram",
+                    }
+                ],
+                "check_rest": "200.00",
+                "created_at": "2024-05-06T17:45:34.987642",
+                "id": "9046f924-3dd8-4d73-a0e2-1f6dc8c70d1d",
+                "purchasing_method": "cash",
+                "total_price": "200.00",
+                "url": "http://0.0.0.0:8001/api/v1/check/printcheck?check_identifier=9046f924-3dd8-4d73-a0e2-1f6dc8c70d1d&str_length=50",
+            }
+        ],
     )
 
 

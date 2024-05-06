@@ -18,7 +18,6 @@ logger = set_logger()
 
 app = FastAPI(
     root_path=settings.api_prefix,
-    openapi_prefix=settings.api_prefix,
     title="CheckBox",
     description="CheckBox API",
     docs_url="/",

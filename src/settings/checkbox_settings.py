@@ -10,11 +10,11 @@ BASE_DIR = Path(__file__).parent.parent.parent
 
 class Settings(BaseSettings):
     """
-    Configuration class for managing environment-specific settings throughout the project.
+    This class is a subclass of BaseSettings from the pydantic library. It is used to manage environment-specific settings throughout the project.
+    The settings are loaded from a `.env` file located in the base directory of the script. Extra fields not defined in the model are ignored.
 
     Attributes:
-        model_config (SettingsConfigDict): Configuration for loading environment variables from a `.env` file,
-                                           with settings to ignore extra fields not defined in the model.
+        model_config (SettingsConfigDict): Configuration for loading environment variables from a `.env` file.
         postgres_host (str): Hostname of the PostgreSQL server.
         postgres_port (str): Port on which the PostgreSQL server is running.
         postgres_db_name (str): Name of the database to connect to within PostgreSQL.
@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: SecretStr
     postgres_ingress_port: str
+    postgres_test_db_name: str
     # Redis settings
     redis_host: str
     redis_port: str
@@ -72,7 +73,28 @@ class Settings(BaseSettings):
     str_length: str = "str_length"
     check_identifier: str = "check_identifier"
 
+    def get_test_db_url(self) -> str:
+        """
+        Constructs the database connection URL for testing.
+        If running in a local development environment, it connects via the local ingress port.
+        Otherwise, it uses the configured PostgreSQL host and port.
+        """
+        if self.local_development:
+            return (
+                f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
+                f"127.0.0.1:{self.postgres_ingress_port}/{self.postgres_test_db_name}"
+            )
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
+            f"{self.postgres_host}:{self.postgres_port}/{self.postgres_test_db_name}"
+        )
+
     def get_db_url(self) -> str:
+        """
+        Constructs the database connection URL.
+        If running in a local development environment, it connects via the local ingress port.
+        Otherwise, it uses the configured PostgreSQL host and port.
+        """
         if self.local_development:
             return (
                 f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
@@ -84,9 +106,14 @@ class Settings(BaseSettings):
         )
 
     def get_redis_url(self) -> str:
+        """
+        Constructs the Redis connection URL.
+        If running in a local development environment, it connects via the local ingress port.
+        Otherwise, it uses the configured Redis host and port.
+        """
         if self.local_development:
             return f"redis://{self.redis_host}:{self.redis_ingress_port}"
         return f"redis://{self.redis_host}:{self.redis_port}"
 
 
-settings = Settings()
+settings = Settings()  # An instance of the Settings class

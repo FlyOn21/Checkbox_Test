@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from fastapi_cache.decorator import cache
 
 from src.database.database_connect import get_db
 from src.services.auth.auth import get_current_user
@@ -17,7 +16,6 @@ from src.services.checks.check_print import print_receipt
 from src.services.checks.get_check import get_user_checks
 from src.services.checks.schemas.check_create_query_schema import QueryCheck, AnswerCheck
 from src.services.checks.schemas.check_get_schema import BaseGetCheck
-from src.utils.json.json_encoder import ORJsonCoder
 from src.utils.logging.set_logging import set_logger
 from src.settings.checkbox_settings import settings
 
@@ -32,7 +30,6 @@ DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"
     response_model=AnswerCheck,
     status_code=status.HTTP_201_CREATED,
     description="Check creation. Returns check data.",
-    tags=["check"],
     responses={
         409: {
             "model": HTTPExceptionModel,
@@ -46,8 +43,7 @@ async def create_check_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> AnswerCheck:
-    return await create_check(check_create_data, db, user, request)
-
+    return await create_check(request, check_create_data, db, user)
 
 
 @check_router.get(
@@ -55,9 +51,7 @@ async def create_check_endpoint(
     response_model=BaseGetCheck,
     status_code=status.HTTP_200_OK,
     description="Get user checks info",
-    tags=["check"],
 )
-@cache(expire=500, coder=ORJsonCoder)
 async def get_check_endpoint(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -98,7 +92,7 @@ async def get_check_endpoint(
         Literal["cashless", "cash"] | None,
         Query(title="purchaseType", description="Filtering purchase type. Valid value: cashless, cash"),
     ] = None,
-    page: Annotated[int, Query(title="page", description="Page number")] = 1,
+    page: Annotated[int, Query(title="page", description="Page number", ge=1)] = 1,
     size: Annotated[int, Query(title="size", description="Page size", ge=1, le=100)] = 10,
 ) -> BaseGetCheck:
     result: BaseGetCheck = await get_user_checks(
@@ -117,16 +111,20 @@ async def get_check_endpoint(
     return result
 
 
-
 @check_router.get(
     "/printcheck",
     response_class=HTMLResponse,
     status_code=status.HTTP_200_OK,
     description="Print check by check identifier",
-    tags=["check"],
     name=settings.print_check_endpoint_name,
+    responses={
+        404: {
+            "model": HTTPExceptionModel,
+            "description": "Error creating error massages",
+        },
+    },
 )
-@cache(expire=1000, coder=ORJsonCoder)
+# @cache(coder=ORJsonCoder) !!!! Uncomment this line to enable caching in production
 async def print_check_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     check_identifier: Annotated[

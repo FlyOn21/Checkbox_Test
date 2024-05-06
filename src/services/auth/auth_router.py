@@ -18,7 +18,6 @@ oauth_router = routing.APIRouter(prefix="/auth", tags=["auth"])
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
     description="User registration. Returns user data.",
-    tags=["auth"],
     response_model_exclude={"user_essence"},
     responses={
         409: {
@@ -36,7 +35,6 @@ async def create_new_user(create_user: UserCreate, db: Annotated[AsyncSession, D
     response_model=JWTToken,
     status_code=status.HTTP_200_OK,
     description="User login. Returns access token.",
-    tags=["auth"],
     responses={
         401: {
             "model": HTTPExceptionModel,

@@ -67,20 +67,6 @@ async def create_check(
         raise e
 
 
-#
-# async def float_to_decimal(check_create_data: QueryCheck) -> QueryCheck:
-#     """
-#
-#     :param check_create_data:
-#     :return:
-#     """
-#     for product in check_create_data.products:
-#         product.price = number_to_decimal(product.price)
-#         product.quantity = number_to_decimal(product.quantity)
-#     check_create_data.payment.amount = number_to_decimal(check_create_data.payment.amount)
-#     return check_create_data
-
-
 async def create_check_start(
     request: Request, check_create_data: QueryCheck, db_session: AsyncSession, user: TokenPayload
 ) -> AnswerCheck:
@@ -100,7 +86,6 @@ async def create_check_start(
 
     found_product_names = {product.product_title for product in products_in_db}
     not_found_products = set(product_names) - set(found_product_names)
-
     if not_found_products:
         error_msg = f"Some products not found: {', '.join(not_found_products)}"
         raise some_products_not_found(error_msg)
@@ -226,7 +211,6 @@ async def check_update(
     )
     check_repo = CheckRepository(session=db_session)
     updated_check_from_db: Check = await check_repo.update(new_check.id, update_check.dict())
-    pprint(updated_check_from_db.__dict__)
     updated_check: ReadCheck = updated_check_from_db.to_model_schema()
     return updated_check
 

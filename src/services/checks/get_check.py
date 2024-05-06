@@ -10,13 +10,16 @@ from starlette.requests import Request
 
 from src.repositories.essence_repository import UserEssenceRepository
 from src.services.auth.schemas.user_auth import TokenPayload
+from src.services.checks.check_http_exception import page_number_out_of_bounds
 from src.services.checks.schemas.check_get_schema import (
     CheckGet,
     CheckProductGet,
     BaseGetCheck,
     Pagination,
     FilteringParams,
+    PaginationInfo,
 )
+from src.services.checks.schemas.checks_schemas import ReadCheck
 from src.utils.convert.number_to_decimal import number_to_decimal
 from src.utils.link.create_check_link import get_check_link
 from src.utils.logging.set_logging import set_logger
@@ -51,6 +54,7 @@ async def get_user_checks(
             page=page,
             size=size,
         )
+
     except SQLAlchemyError as e:
         logger.exception("Database error occurred while creating check")
         raise e
@@ -95,24 +99,16 @@ async def get_user_checks_processing(
         purchase_type=purchase_type,
     )
 
-    limit, offset = await set_limit_offset(page, size)
+    offset = await set_limit_offset(page, size)
     filter_data = await user_essence_repository.get_user_essence_by_user_id(
-        filter_params=filtering_params, sorting_rule=sorting_rule, user_id=user.user_id, limit=limit, offset=offset
+        filter_params=filtering_params, sorting_rule=sorting_rule, user_id=user.user_id, offset=offset
     )
-
     if not filter_data:
-        return BaseGetCheck(
-            pagination=Pagination(
-                total_pages=0,
-                total_elements=0,
-                previous_page=None,
-                next_page=None,
-            ),
-            checks=[],
-        )
-    pagination = await pagination_calculation(page, size, len(filter_data.user_checks))
+        pagination = await pagination_calculation(page, size, [])
+    else:
+        pagination = await pagination_calculation(page, size, filter_data.user_checks)
     checks_list: List[CheckGet] = []
-    for check in filter_data.user_checks:
+    for check in pagination.checks:
         check_dict = {
             "id": check.check_identifier,
             "created_at": check.check_datetime,
@@ -135,37 +131,43 @@ async def get_user_checks_processing(
         link: Url = await get_check_link(check.check_identifier, request)
         checks_list.append(CheckGet(**check_dict, url=link))
 
-    return BaseGetCheck(pagination=pagination, checks=checks_list)
+    return BaseGetCheck(pagination=pagination.pagination_info, checks=checks_list)
 
 
-async def set_limit_offset(page: int, size: int) -> tuple[int, int]:
+async def set_limit_offset(page: int, size: int) -> int:
     """
     Set limit and offset for pagination
     :param page: Page number
     :param size: Page size
     :return: Tuple of limit and offset
     """
-    limit = size
     offset = (page - 1) * size
-    return limit, offset
+    return offset
 
 
 async def pagination_calculation(
     page: int,
     size: int,
-    total_elements: int,
+    items: List[ReadCheck],
 ) -> Pagination:
-    check_count, total_pages, previous_page, next_page = await count_all_user_checks(total_elements, size, page)
-    return Pagination(
+    check_count, total_pages, previous_page, next_page = await count_all_user_checks(len(items), size, page)
+    pagination_info: PaginationInfo = PaginationInfo(
         total_pages=total_pages,
         total_elements=check_count,
         previous_page=previous_page,
         next_page=next_page,
     )
+    start_index = (page - 1) * size
+    end_index = start_index + size
+    paginated_list: List[ReadCheck] = items[start_index:end_index]
+    return Pagination(
+        pagination_info=pagination_info,
+        checks=paginated_list,
+    )
 
 
 async def count_all_user_checks(
-    total_elements: int,
+    total_elements_query: int,
     size: int,
     page: int,
 ) -> tuple[int, int, Union[int, None], Union[int, None]]:
@@ -176,6 +178,10 @@ async def count_all_user_checks(
     :param page: Page number
     :return: Tuple of total elements, total pages, previous page and next page
     """
+    if total_elements_query == 0 and page != 1:
+        raise page_number_out_of_bounds(["Page number is out of bounds"])
+    total_elements = total_elements_query + ((page - 1) * size)
+    print(total_elements, size, page)
     if total_elements == 0:
         return 0, 0, None, None
     if total_elements < size:
@@ -186,7 +192,7 @@ async def count_all_user_checks(
     if total_elements % size != 0:
         total_pages += 1
     if total_pages < page:
-        return total_elements, total_pages, None, None
+        raise page_number_out_of_bounds(["Page number is out of bounds"])
     previous_page = page - 1 if page > 1 else None
     next_page = page + 1 if page < total_pages else None
     return total_elements, total_pages, previous_page, next_page

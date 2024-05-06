@@ -216,7 +216,7 @@ class StockCreate(BaseModel):
         description="The product id",
         example="1",
     )
-    quantity_in_stock: float = Field(
+    quantity_in_stock: Decimal = Field(
         title="quantityInStock",
         description="The quantity in stock",
         example="100.0",

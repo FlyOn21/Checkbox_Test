@@ -1,28 +1,31 @@
 version: "3.7"
 services:
 
-#  checkbox:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    restart: unless-stopped
-#    image: youtubetapi:0.1
-#    hostname: fastapi
-#    ports:
-#      - ${FASTAPI_INTERNAL_PORT}:${FASTAPI_EXTERNAL_PORT}
-#    networks:
-#      - sever_infrastructure
-#    env_file:
-#      - .env
-#    volumes:
-#      - ./server:/app/server
-#    depends_on:
-#      - pgadmin
-#      - dbpsql
+  checkbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: checkboxApi
+    image: checkboxapi:0.1.0
+    hostname: fastapi
+    ports:
+      - ${FASTAPI_INGRESS_PORT}:${FASTAPI_PORT}
+    expose:
+      - 80
+    networks:
+      - app_infrastructure
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - pgadmin
+      - dbpsql
 
   dbpsql:
     image: postgres:13.14-bullseye
-    container_name: postgres_database_checks
+    container_name: postgres_db_checks
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -39,7 +42,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pg4_l_checks
+    container_name: pg4_admin_checks
     restart: unless-stopped
     hostname: ${PGADMIN_HOST_NAME}
     environment:
@@ -54,7 +57,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis_cache
+    container_name: redis_cache_checks
     restart: always
     hostname: ${REDIS_HOST_NAME}
     environment:
@@ -68,21 +71,6 @@ services:
       - ${REDIS_INGRESS_PORT}:${REDIS_PORT}
     volumes:
       - cache:/data
-#  nginx:
-#    build: ./nginx
-#    container_name: nginx_checks
-#    hostname: ${NGINX_HOST_NAME}
-#    volumes:
-#      - templates_nginx:/etc/nginx/templates
-#    ports:
-#      - ${NGINX_INGRESS_PORT}:${NGINX_CONTAINER_PORT}
-#    environment:
-#      NGINX_PORT: ${NGINX_CONTAINER_PORT}
-#    depends_on:
-#      - pgadmin
-#      - dbpsql
-#    networks:
-#      - app_infrastructure
 
 networks:
   app_infrastructure:
