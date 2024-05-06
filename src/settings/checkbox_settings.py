@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: SecretStr
     postgres_ingress_port: str
+    # Redis settings
     # FastAPI settings
     local_development: bool
     debug_mode: bool
@@ -63,6 +64,10 @@ class Settings(BaseSettings):
     algorithm: str
     jwt_expire_time: int
     decimal_places: int
+    check_default_line_width: int
+    print_check_endpoint_name: str
+    str_length: str = "str_length"
+    check_identifier: str = "check_identifier"
 
     def get_db_url(self) -> str:
         if self.local_development:

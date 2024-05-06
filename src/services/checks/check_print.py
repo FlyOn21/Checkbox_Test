@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -23,7 +24,8 @@ async def print_receipt(
 ) -> str:
     try:
         data: ReceiptData = await get_check_data(db, check_identifier)
-        return generate_receipt(data=data, line_width=str_length)
+        recept_list: List[str] = generate_receipt(data=data, line_width=str_length)
+        return receipt_to_html(recept_list)
     except SQLAlchemyError as e:
         logger.exception("Database error occurred while creating check")
         raise e
@@ -67,37 +69,87 @@ async def get_check_data(db: AsyncSession, check_identifier: UUID) -> ReceiptDat
     )
 
 
-def generate_receipt(data: ReceiptData, line_width=50) -> str:
+def generate_receipt(data: ReceiptData, line_width=50) -> List[str]:
     """
     Generates a formatted receipt with enhanced formatting.
 
     :param data: ReceiptData: Receipt data.
     :param line_width: int: Line width for the receipt.
-    :return: str: Formatted receipt.
+    :return: List[str]: Formatted receipt.
     """
 
     def format_money(amount):
         return f"{amount:,.2f}"
 
+    receipt = []
     # Header
-    receipt = data.owner_name.center(line_width) + "\n"
-    receipt += "=" * line_width + "\n"
+    receipt.append(data.owner_name.center(line_width))
+    receipt.append("=" * line_width)
 
     # Body
     for item in data.items:
         item_line = f"{item.quantity:.2f} x {format_money(item.unit_price)}".ljust(line_width - 20)
         item_line += format_money(item.total_price).rjust(20)
-        receipt += item_line + "\n"
-        receipt += item.description + "\n"
-        receipt += "-" * line_width + "\n"
+        receipt.append(item_line)
+        receipt.append(item.description)
+        receipt.append("-" * line_width)
 
     # Footer
-    receipt += "=" * line_width + "\n"
-    receipt += f"{'SUM'.rjust(line_width - 20)}{format_money(data.total).rjust(20)}\n"
-    receipt += f"{data.purchasing_method.rjust(line_width - 20)}{format_money(data.total + data.rest).rjust(20)}\n"
-    receipt += f"{'Rest'.rjust(line_width - 20)}{format_money(data.rest).rjust(20)}\n"
-    receipt += "=" * line_width + "\n"
-    receipt += data.date.center(line_width) + "\n"
-    receipt += "Thank you for your purchase!".center(line_width) + "\n"
+    receipt.append("=" * line_width)
+    receipt.append(f"{'SUM'.rjust(line_width - 20)}{format_money(data.total).rjust(20)}")
+    receipt.append(f"{data.purchasing_method.rjust(line_width - 20)}{format_money(data.total + data.rest).rjust(20)}")
+    receipt.append(f"{'Rest'.rjust(line_width - 20)}{format_money(data.rest).rjust(20)}")
+    receipt.append("=" * line_width)
+    receipt.append(data.date.center(line_width))
+    receipt.append(data.thank_you_message.center(line_width))
 
     return receipt
+
+
+def receipt_to_html(receipt_lines: List[str]) -> str:
+    """
+    Convert receipt lines to HTML.
+    :param receipt_lines: list of receipt lines
+    :return: html string
+    """
+    html_output = "<!DOCTYPE html><html><head><title>Receipt</title></head><body><pre>"
+    for line in receipt_lines:
+        html_output += line + "<br>"
+    html_output += "</pre></body></html>"
+    return html_output
+
+
+# def generate_receipt(data: ReceiptData, line_width=50) -> str:
+#     """
+#     Generates a formatted receipt with enhanced formatting.
+#
+#     :param data: ReceiptData: Receipt data.
+#     :param line_width: int: Line width for the receipt.
+#     :return: str: Formatted receipt.
+#     """
+#
+#     def format_money(amount):
+#         return f"{amount:,.2f}"
+#     receipt = []
+#     # Header
+#     receipt = data.owner_name.center(line_width) + "\n"
+#     receipt += "=" * line_width + "\n"
+#
+#     # Body
+#     for item in data.items:
+#         item_line = f"{item.quantity:.2f} x {format_money(item.unit_price)}".ljust(line_width - 20)
+#         item_line += format_money(item.total_price).rjust(20)
+#         receipt += item_line + "\n"
+#         receipt += item.description + "\n"
+#         receipt += "-" * line_width + "\n"
+#
+#     # Footer
+#     receipt += "=" * line_width + "\n"
+#     receipt += f"{'SUM'.rjust(line_width - 20)}{format_money(data.total).rjust(20)}\n"
+#     receipt += f"{data.purchasing_method.rjust(line_width - 20)}{format_money(data.total + data.rest).rjust(20)}\n"
+#     receipt += f"{'Rest'.rjust(line_width - 20)}{format_money(data.rest).rjust(20)}\n"
+#     receipt += "=" * line_width + "\n"
+#     receipt += data.date.center(line_width) + "\n"
+#     receipt += "Thank you for your purchase!".center(line_width) + "\n"
+#
+#     return receipt

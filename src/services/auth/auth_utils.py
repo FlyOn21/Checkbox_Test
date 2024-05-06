@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from joserfc import jwt
 from joserfc.jwk import OctKey
 from joserfc.jwt import Token
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.repositories.user_repository import UsersRepository
 from src.services.auth.schemas.user_auth import JWTToken
 from src.settings.checkbox_settings import settings
 
@@ -33,11 +35,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(email: str, user_id: int, expires_delta: Optional[timedelta] = None) -> JWTToken:
+def decode_access_token(token: str) -> Token:
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+
+async def create_access_token(
+    email: str, user_id: int, db_session: AsyncSession, expires_delta: Optional[timedelta] = None
+) -> JWTToken:
     """
     Create access token
     :param email: User email
     :param user_id: User id
+    :param db_session: db async session
     :param expires_delta: Token expiration time
     :return: Token instance
     """
@@ -50,8 +59,15 @@ def create_access_token(email: str, user_id: int, expires_delta: Optional[timede
         expire = datetime.utcnow() + timedelta(seconds=EXPIRE_TIME)
     claims.update({"exp": expire})
     token = jwt.encode(header, claims, key)
+    await update_last_login(user_id, db_session)
     return JWTToken(access_token=token, token_type="bearer", expires_in=EXPIRE_TIME)
 
 
-def decode_access_token(token: str) -> Token:
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+async def update_last_login(user_id: int, db_session: AsyncSession):
+    """
+    Update last login time
+    :param user_id: User id
+    :param db_session: db async session
+    """
+    user_repo: UsersRepository = UsersRepository(db_session)
+    await user_repo.update(unit_id=user_id, data={"last_login_datetime": datetime.utcnow()})

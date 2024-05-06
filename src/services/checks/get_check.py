@@ -2,9 +2,11 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal, List, Union
 
+from pydantic_core import Url
 from sqlalchemy.exc import SQLAlchemyError
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from src.repositories.essence_repository import UserEssenceRepository
 from src.services.auth.schemas.user_auth import TokenPayload
@@ -16,12 +18,14 @@ from src.services.checks.schemas.check_get_schema import (
     FilteringParams,
 )
 from src.utils.convert.number_to_decimal import number_to_decimal
+from src.utils.link.create_check_link import get_check_link
 from src.utils.logging.set_logging import set_logger
 
 logger = set_logger()
 
 
 async def get_user_checks(
+    request: Request,
     db: AsyncSession,
     user: TokenPayload,
     sorting_rule: Literal["asc", "desc"],
@@ -35,6 +39,7 @@ async def get_user_checks(
 ) -> BaseGetCheck:
     try:
         return await get_user_checks_processing(
+            request=request,
             db=db,
             user=user,
             sorting_rule=sorting_rule,
@@ -55,6 +60,7 @@ async def get_user_checks(
 
 
 async def get_user_checks_processing(
+    request: Request,
     db: AsyncSession,
     user: TokenPayload,
     sorting_rule: Literal["asc", "desc"],
@@ -126,7 +132,8 @@ async def get_user_checks_processing(
                 "product_units": product.sold_units,
             }
             check_dict["check_products"].append(CheckProductGet(**product_dict))
-        checks_list.append(CheckGet(**check_dict))
+        link: Url = await get_check_link(check.check_identifier, request)
+        checks_list.append(CheckGet(**check_dict, url=link))
 
     return BaseGetCheck(pagination=pagination, checks=checks_list)
 

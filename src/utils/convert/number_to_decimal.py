@@ -1,7 +1,7 @@
 from decimal import Decimal, Context, ROUND_HALF_UP
 
 
-def number_to_decimal(number: float | Decimal) -> Decimal:
+def number_to_decimal(number: float | Decimal | int) -> Decimal:
     """
     Convert float to Decimal
     :param number: float or Decimal

@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from src.database.database_connect import get_db
 from src.services.auth.auth import get_current_user
@@ -18,23 +17,13 @@ from src.services.checks.check_print import print_receipt
 from src.services.checks.get_check import get_user_checks
 from src.services.checks.schemas.check_create_query_schema import QueryCheck, AnswerCheck
 from src.services.checks.schemas.check_get_schema import BaseGetCheck
-from src.services.checks.schemas.print_schema import ReceiptData
 from src.utils.logging.set_logging import set_logger
-from jinja2 import Environment, FileSystemLoader
+from src.settings.checkbox_settings import settings
 
 logger = set_logger()
 
 check_router = routing.APIRouter(prefix="/check", tags=["check"])
 DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"
-# def format_currency(value):
-#     value2 = float(value)
-#     return f"{value2:,.2f}"
-#
-# # Setup Jinja2 environment
-# env = Environment(loader=FileSystemLoader('templates'))
-# env.filters['format_currency'] = format_currency
-
-# templates = Jinja2Templates(directory="templates")
 
 
 @check_router.post(
@@ -51,12 +40,12 @@ DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"
     },
 )
 async def create_check_endpoint(
+    request: Request,
     check_create_data: QueryCheck,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> AnswerCheck:
-    return await create_check(check_create_data, db, user)
-    # return JSONResponse(status_code=status.HTTP_201_CREATED, content={"message": "Check created successfully."})
+    return await create_check(check_create_data, db, user, request)
 
 
 @check_router.get(
@@ -67,6 +56,7 @@ async def create_check_endpoint(
     tags=["check"],
 )
 async def get_check_endpoint(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[TokenPayload, Depends(get_current_user)],
     sorting_rule: Annotated[
@@ -109,6 +99,7 @@ async def get_check_endpoint(
     size: Annotated[int, Query(title="size", description="Page size", ge=1, le=100)] = 10,
 ) -> BaseGetCheck:
     result: BaseGetCheck = await get_user_checks(
+        request,
         db,
         user,
         sorting_rule,
@@ -125,21 +116,28 @@ async def get_check_endpoint(
 
 @check_router.get(
     "/printcheck",
-    # response_class=HTMLResponse,
+    response_class=HTMLResponse,
     status_code=status.HTTP_200_OK,
     description="Print check by check identifier",
     tags=["check"],
+    name=settings.print_check_endpoint_name,
 )
 async def print_check_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
-    check_identifier: Annotated[UUID, Query(title="checkIdentifier", description="Check identifier")],
-    str_length: Annotated[int, Query(title="strLength", description="Line width in characters", ge=10, le=100)] = 50,
-) -> str:
+    check_identifier: Annotated[
+        UUID, Query(title="checkIdentifier", description="Check identifier", alias=settings.check_identifier)
+    ],
+    str_length: Annotated[
+        int,
+        Query(
+            title="strLength",
+            description="Line width in characters",
+            ge=10,
+            le=100,
+            alias=settings.str_length,
+            default_factory=lambda: settings.check_default_line_width,
+        ),
+    ],
+) -> HTMLResponse:
     recept: str = await print_receipt(db, check_identifier, str_length)
-    return recept
-    # try:
-    #     template = env.get_template('check.html')
-    #     data = recept.dict()
-    #     return HTMLResponse(template.render(data=data))
-    # except Exception as e:
-    #     logger.exception("An unexpected error occurred")
+    return HTMLResponse(recept)

@@ -150,7 +150,7 @@ class SoldProductCreate(BaseModel):
         description="The sold product units",
         example="kilogram",
     )
-    sold_quantity: float = Field(
+    sold_quantity: Decimal = Field(
         title="soldQuantity",
         description="The sold product quantity",
         example="1.0",

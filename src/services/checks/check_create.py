@@ -38,14 +38,27 @@ from src.repositories.check_repository import CheckRepository
 from src.repositories.sold_product_repository import SoldProductRepository
 from src.repositories.stock_repository import StockRepository
 from src.utils.convert.number_to_decimal import number_to_decimal
+from starlette.requests import Request
+from pydantic_core import Url
+
+from src.utils.link.create_check_link import get_check_link
 
 logger = set_logger()
 
 
-async def create_check(check_create_data: QueryCheck, db_session: AsyncSession, user: TokenPayload) -> AnswerCheck:
-
+async def create_check(
+    request: Request, check_create_data: QueryCheck, db_session: AsyncSession, user: TokenPayload
+) -> AnswerCheck:
+    """
+    Start process create new check
+    :param request: Request
+    :param check_create_data: Input data for check creation
+    :param db_session: AsyncSession db
+    :param user: User token payload
+    :return: AnswerCheck instance
+    """
     try:
-        return await create_check_start(check_create_data, db_session, user)
+        return await create_check_start(request, check_create_data, db_session, user)
     except SQLAlchemyError as e:
         logger.exception("Database error occurred while creating check")
         raise e
@@ -54,16 +67,32 @@ async def create_check(check_create_data: QueryCheck, db_session: AsyncSession, 
         raise e
 
 
-async def float_to_decimal(check_create_data: QueryCheck) -> QueryCheck:
-    for product in check_create_data.products:
-        product.price = number_to_decimal(product.price)
-        product.quantity = number_to_decimal(product.quantity)
-    check_create_data.payment.amount = number_to_decimal(check_create_data.payment.amount)
-    return check_create_data
+#
+# async def float_to_decimal(check_create_data: QueryCheck) -> QueryCheck:
+#     """
+#
+#     :param check_create_data:
+#     :return:
+#     """
+#     for product in check_create_data.products:
+#         product.price = number_to_decimal(product.price)
+#         product.quantity = number_to_decimal(product.quantity)
+#     check_create_data.payment.amount = number_to_decimal(check_create_data.payment.amount)
+#     return check_create_data
 
 
-async def create_check_start(check_create_data: QueryCheck, db_session: AsyncSession, user: TokenPayload):
-    check_create_data = await float_to_decimal(check_create_data)
+async def create_check_start(
+    request: Request, check_create_data: QueryCheck, db_session: AsyncSession, user: TokenPayload
+) -> AnswerCheck:
+    # check_create_data = await float_to_decimal(check_create_data)
+    """
+    Main function for check creation
+    :param request: Request
+    :param check_create_data: Input data for check creation
+    :param db_session:  AsyncSession db
+    :param user: User token payload
+    :return: AnswerCheck instance
+    """
     product_names: List[str] = [product.name for product in check_create_data.products]
     product_repo: ProductRepository = ProductRepository(session=db_session)
 
@@ -81,10 +110,13 @@ async def create_check_start(check_create_data: QueryCheck, db_session: AsyncSes
     await validate_quantity_and_price(check_create_data, products_dict)
     user_essence: ReadUserEssence = await check_user_essence(db_session, user)
     new_check: ReadCheck = await check_entity_create(check_create_data, user_essence, db_session)
-    sold_products, updated_products_dict = await sold_product_get(products_dict, check_create_data.products, new_check)
+    sold_products, updated_products_dict = await create_sold_product_entity(
+        products_dict, check_create_data.products, new_check
+    )
     updated_check: ReadCheck = await check_update(new_check, sold_products, db_session, check_create_data)
     await update_stock(updated_products_dict, db_session)
 
+    link: Url = await get_check_link(new_check.check_identifier, request)
     answer_payment: AnswerPayment = AnswerPayment(
         type=updated_check.check_purchasing_method, amount=check_create_data.payment.amount
     )
@@ -93,7 +125,7 @@ async def create_check_start(check_create_data: QueryCheck, db_session: AsyncSes
             name=product.sold_product_title,
             price=product.sold_price,
             quantity=product.sold_quantity,
-            total=number_to_decimal(product.sold_price * number_to_decimal(product.sold_quantity)),
+            total=product.sold_price * product.sold_quantity,
         )
         for product in updated_check.check_products
     ]
@@ -101,9 +133,10 @@ async def create_check_start(check_create_data: QueryCheck, db_session: AsyncSes
         check_id=updated_check.check_identifier,
         products=answer_products,
         payment=answer_payment,
-        total=number_to_decimal(updated_check.check_total_price),
-        rest=number_to_decimal(updated_check.check_rest),
+        total=updated_check.check_total_price,
+        rest=updated_check.check_rest,
         created_at=updated_check.check_datetime.isoformat(),
+        url=link,
     )
 
     return answer_check
@@ -113,6 +146,12 @@ async def update_stock(
     updated_products_dict: Dict[str, ReadProduct],
     db_session: AsyncSession,
 ) -> None:
+    """
+    Update stock in db
+    :param updated_products_dict: updated products dict
+    :param db_session: AsyncSession db
+    :return: None
+    """
     stock_repo: StockRepository = StockRepository(session=db_session)
     for _, product in updated_products_dict.items():
         stock_to_update: StockUpdate = StockUpdate(
@@ -124,6 +163,12 @@ async def update_stock(
 
 
 async def check_user_essence(db_session: AsyncSession, user: TokenPayload) -> ReadUserEssence:
+    """
+    Get user essence
+    :param db_session: AsyncSession db
+    :param user: user token payload
+    :return: ReadUserEssence instance
+    """
     user_essence_repo = UserEssenceRepository(session=db_session)
     user_essence: UserEssence = await user_essence_repo.get_user_essence_by_user_id(user.user_id)
     if not user_essence:
@@ -136,6 +181,13 @@ async def check_user_essence(db_session: AsyncSession, user: TokenPayload) -> Re
 async def check_entity_create(
     check_create_data: QueryCheck, user_essence: ReadUserEssence, db_session: AsyncSession
 ) -> ReadCheck:
+    """
+    Create empty check entity
+    :param check_create_data: input data for check creation
+    :param user_essence: User essence instance
+    :param db_session: AsyncSession db
+    :return: ReadCheck instance
+    """
     check_payment: QueryPayment = check_create_data.payment
     check: CheckCreate = CheckCreate(
         check_datetime=datetime.utcnow(),
@@ -154,6 +206,14 @@ async def check_update(
     db_session: AsyncSession,
     check_create_data: QueryCheck,
 ) -> ReadCheck:
+    """
+    Update check entity
+    :param new_check: Empty check entity
+    :param sold_products: List of sold products
+    :param db_session: AsyncSession db
+    :param check_create_data: Input data for check creation
+    :return: ReadCheck instance
+    """
     sold_product_repo: SoldProductRepository = SoldProductRepository(session=db_session)
     check_total_price: Decimal = Decimal(new_check.check_total_price)
     for sold_product in sold_products:
@@ -172,9 +232,17 @@ async def check_update(
     return updated_check
 
 
-async def sold_product_get(
+async def create_sold_product_entity(
     products_dict: Dict[str, ReadProduct], product_query: List["QueryProduct"], new_check: ReadCheck
 ) -> Tuple[List["SoldProductCreate"], Dict[str, ReadProduct]]:
+    """
+    Create sold product entity
+    :param products_dict: Products dict from db, key is product name
+    :param product_query: List of QueryProduct
+    :param new_check: Empty check entity
+
+    :return: Tuple of List of SoldProductCreate and updated products dict
+    """
     sold_products: List["SoldProductCreate"] = []
     for q_product in product_query:
         product = products_dict[q_product.name]
@@ -192,7 +260,7 @@ async def sold_product_get(
             sold_units=product.product_units,
             sold_quantity=q_product.quantity,
             sold_datetime=datetime.utcnow(),
-            sold_total_price=q_product.quantity * number_to_decimal(product.product_price.price),
+            sold_total_price=q_product.quantity * product.product_price.price,
             sold_stock_id=store_product.id,
             sold_check_id=new_check.id,
             sold_product_id=product.product_identifier,
@@ -202,6 +270,12 @@ async def sold_product_get(
 
 
 async def validate_quantity_and_price(check_create_data: QueryCheck, product_from_db: Dict[str, ReadProduct]) -> None:
+    """
+    Validate input check data and db data
+    :param check_create_data: input data for check creation
+    :param product_from_db: info about products from db
+    :return: None or raise product_conflicts (HTTPException, 409)
+    """
     errors_msg: List[str] = []
     for q_product in check_create_data.products:
         product = product_from_db[q_product.name]

@@ -57,10 +57,8 @@ async def get_current_user(
         payload: TokenPayload = TokenPayload(**token_claims)
         if payload.exp < datetime.utcnow().timestamp():
             raise token_exception()
-        print(payload.sub, "!!!!!!!!!!!!!!!!!!!")
         if not payload.sub or not payload.user_id:
             raise token_exception()
-        print(payload.user_id, "@@@@@@@@@@@@@@@@@@@")
         return payload
     except (BadSignatureError, ValidationError) as ex:
         logger.error(ex)
@@ -83,7 +81,7 @@ async def authenticate_user(email: str, password: str, db_session: AsyncSession)
         raise password_incorrect()
     if not user.is_active:
         raise user_is_not_active()
-    return create_access_token(email=user.email, user_id=user.id)
+    return await create_access_token(email=user.email, user_id=user.id, db_session=db_session)
 
 
 async def registration_user(user: UserCreate, db_session: AsyncSession) -> Union[UserRead, HTTPExceptionModel]:

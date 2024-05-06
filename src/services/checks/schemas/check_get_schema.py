@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic_core import Url
 
 
 class BaseGetCheck(BaseModel):
@@ -73,6 +74,10 @@ class CheckGet(BaseModel):
         default_factory=list,
         title="checkProducts",
         description="The list of check products",
+    )
+    url: Url = Field(
+        title="url",
+        description="The check url",
     )
 
 
