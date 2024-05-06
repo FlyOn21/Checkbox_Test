@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Any, TypeVar
 
 from sqlalchemy import insert, select, update, delete
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.repositories.interface.abs_repository import AbstractRepository
 
 
@@ -22,15 +22,29 @@ class SQLAlchemyRepository(AbstractRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_list(self, limit: int = None, offset: int = None, **filter_by) -> List[model]:
-        stmt = select(self.model)
-        if filter_by:
-            stmt = stmt.filter_by(**filter_by)
+    async def get_list(
+        self,
+        filter_conditions: List[Any],
+        sorting_rule: str = "asc",
+        limit: int = None,
+        offset: int = None,
+        *args,
+        **kwargs
+    ) -> List[model]:
+        stmt = select(self.model).where(*filter_conditions)
+        if sorting_rule == "asc":
+            stmt = stmt.order_by(self.model.id.asc())
+        else:
+            stmt = stmt.order_by(self.model.id.desc())
         if limit is not None:
             stmt = stmt.limit(limit)
         if offset is not None:
             stmt = stmt.offset(offset)
         return [row[0] for row in (await self.session.execute(stmt)).all()]
+
+    async def get_by_id(self, unit_id: int) -> model:
+        stmt = select(self.model).where(self.model.id == unit_id)
+        return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def delete(self, unit_id: int) -> str:
         stmt = delete(self.model).where(self.model.id == unit_id)

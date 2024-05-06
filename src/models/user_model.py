@@ -2,10 +2,8 @@ from datetime import datetime
 from typing import Optional
 
 from .base import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .check_model import UserEssence
+from sqlalchemy.orm import Mapped, mapped_column
 from src.services.auth.schemas.user_auth import UserRead
-from .interfaces.model_interface import AbstractDbModel
 
 
 class User(Base):

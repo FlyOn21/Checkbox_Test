@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import List
 
 from pydantic import EmailStr, BaseModel, ConfigDict, Field, field_validator
 
@@ -146,4 +147,7 @@ class HTTPExceptionModel(BaseModel):
     """
 
     model_config = ConfigDict(title="HTTPException")
-    detail: str = Field(title="massage", description="The error message", example="[Error message1, Error message2]")
+    error: str = Field(title="error", description="The error message", example="Bad Request")
+    message: List[str] | str = Field(
+        title="messages", description="The error description", example="[Error message1, Error message2]"
+    )

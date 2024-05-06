@@ -7,7 +7,7 @@ from .sql_alchemy_repository import SQLAlchemyRepository
 from src.models.check_model import Product
 from sqlalchemy import select
 
-from ..services.checks.schemas.checks_schemas import ReadProduct
+from src.services.checks.schemas.checks_schemas import ReadProduct
 
 
 class ProductRepository(SQLAlchemyRepository):

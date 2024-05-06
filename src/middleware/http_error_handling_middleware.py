@@ -13,7 +13,9 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         try:
             return await call_next(request)
         except HTTPException as http_exception:
-            context = HTTPExceptionModel(detail=http_exception.detail).dict()
+            error = http_exception.__dict__.get("detail").get("error")
+            message = http_exception.__dict__.get("detail").get("message")
+            context = HTTPExceptionModel(error=error, message=message).dict()
             return JSONResponse(
                 status_code=http_exception.status_code,
                 content=context,

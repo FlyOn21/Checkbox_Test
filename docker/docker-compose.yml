@@ -1,31 +1,26 @@
 version: "3.7"
 services:
-  ### DB START
-  # This is the database to which the all the other components in the stack will connect and interact with
-  # (but mostly it's PostgREST that is going to be responsible for the bulk of the db traffic)
-  # Having the database in a container is very convinient in development but in production you will
-  # use a separate database instance, like Amazon RDS, i.e. in production this section will be
-  # commented and in the .env file you will specify the ip of your separate database instance
-#  testTaskCheckbox:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    restart: unless-stopped
-#    image: youtubetapi:0.1
-#    hostname: fastapi
-#    ports:
-#      - ${FASTAPI_INTERNAL_PORT}:${FASTAPI_EXTERNAL_PORT}
-#    networks:
-#      - sever_infrastructure
-#    env_file:
-#      - .env
-#    volumes:
-#      - ./server:/app/server
-#    depends_on:
-#      - pgadmin
-#      - dbpsql
-#      - celery
-#      - flower
+
+  checkbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    image: youtubetapi:0.1
+    hostname: fastapi
+    ports:
+      - ${FASTAPI_INTERNAL_PORT}:${FASTAPI_EXTERNAL_PORT}
+    networks:
+      - sever_infrastructure
+    env_file:
+      - .env
+    volumes:
+      - ./server:/app/server
+    depends_on:
+      - pgadmin
+      - dbpsql
+      - celery
+      - flower
 
   dbpsql:
     image: postgres:13.14-bullseye
@@ -75,21 +70,21 @@ services:
       - ${REDIS_INGRESS_PORT}:${REDIS_PORT}
     volumes:
       - redis_logs:/data/logs
-#  nginx:
-#    build: ./nginx
-#    container_name: nginx_checks
-#    hostname: ${NGINX_HOST_NAME}
-#    volumes:
-#      - templates_nginx:/etc/nginx/templates
-#    ports:
-#      - ${NGINX_INGRESS_PORT}:${NGINX_CONTAINER_PORT}
-#    environment:
-#      NGINX_PORT: ${NGINX_CONTAINER_PORT}
-#    depends_on:
-#      - pgadmin
-#      - dbpsql
-#    networks:
-#      - app_infrastructure
+  nginx:
+    build: ./nginx
+    container_name: nginx_checks
+    hostname: ${NGINX_HOST_NAME}
+    volumes:
+      - templates_nginx:/etc/nginx/templates
+    ports:
+      - ${NGINX_INGRESS_PORT}:${NGINX_CONTAINER_PORT}
+    environment:
+      NGINX_PORT: ${NGINX_CONTAINER_PORT}
+    depends_on:
+      - pgadmin
+      - dbpsql
+    networks:
+      - app_infrastructure
 
 networks:
   app_infrastructure:
@@ -97,7 +92,7 @@ networks:
 volumes:
   postgres_data_prod:
     name: postgres_data_prod
-#  templates_nginx:
-#    name: templates_nginx
+  templates_nginx:
+    name: templates_nginx
   redis_logs:
     name: redis_logs

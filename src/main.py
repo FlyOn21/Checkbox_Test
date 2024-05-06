@@ -1,6 +1,4 @@
-from typing import Annotated
-
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 
 from starlette.middleware.cors import CORSMiddleware
 

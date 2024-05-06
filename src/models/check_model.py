@@ -7,8 +7,6 @@ from sqlalchemy import ForeignKey
 
 from .base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from .interfaces.model_interface import AbstractDbModel
 import src.services.checks.schemas.checks_schemas as schemas
 
 
@@ -25,7 +23,7 @@ class Check(Base):
 
     def to_model_schema(self) -> schemas.ReadCheck:
         return schemas.ReadCheck(
-            check_id=self.id,
+            id=self.id,
             check_datetime=self.check_datetime,
             check_identifier=self.check_identifier,
             check_total_price=self.check_total_price,
@@ -50,6 +48,7 @@ class SoldProduct(Base):
     sold_quantity: Mapped[float] = mapped_column(nullable=False)
     sold_datetime: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
     sold_total_price: Mapped[Decimal] = mapped_column(nullable=False)
+    sold_product_id: Mapped[UUID] = mapped_column(nullable=False)
     sold_stock_id: Mapped[int] = mapped_column(ForeignKey("stock.id", ondelete="SET NULL"))
     sold_check_id: Mapped[int] = mapped_column(
         ForeignKey("checks.id", ondelete="RESTRICT"),
@@ -57,7 +56,7 @@ class SoldProduct(Base):
 
     def to_model_schema(self) -> schemas.ReadSoldProduct:
         return schemas.ReadSoldProduct(
-            sold_id=self.id,
+            id=self.id,
             sold_product_title=self.sold_product_title,
             sold_product_description=self.sold_product_description,
             sold_discount=self.sold_discount,
@@ -66,6 +65,7 @@ class SoldProduct(Base):
             sold_quantity=self.sold_quantity,
             sold_datetime=self.sold_datetime,
             sold_total_price=self.sold_total_price,
+            sold_product_id=self.sold_product_id,
             sold_check_id=self.sold_check_id,
         )
 
@@ -90,7 +90,7 @@ class Stock(Base):
             quantity_in_stock=self.quantity_in_stock,
             stock_last_update=self.stock_last_update,
             stock_product_identifier=self.stock_product_identifier,
-            checks=self.checks,
+            sales=self.sales,
         )
 
     def __repr__(self) -> str:
@@ -108,7 +108,7 @@ class ProductPrice(Base):
 
     def to_model_schema(self) -> schemas.ReadProductPrice:
         return schemas.ReadProductPrice(
-            price_id=self.id,
+            id=self.id,
             product_id=self.product_id,
             price=self.price,
             discount=self.discount,
@@ -133,7 +133,7 @@ class Product(Base):
 
     def to_model_schema(self) -> schemas.ReadProduct:
         return schemas.ReadProduct(
-            product_id=self.id,
+            id=self.id,
             product_identifier=self.product_identifier,
             product_title=self.product_title,
             product_description=self.product_description,
@@ -157,7 +157,7 @@ class UserEssence(Base):
 
     def to_model_schema(self) -> schemas.ReadUserEssence:
         return schemas.ReadUserEssence(
-            essence_id=self.id,
+            id=self.id,
             user_id=self.id,
             user_checks=self.user_checks,
         )

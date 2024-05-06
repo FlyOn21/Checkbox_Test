@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     api_prefix: str
     algorithm: str
     jwt_expire_time: int
+    decimal_places: int
 
     def get_db_url(self) -> str:
         if self.local_development:

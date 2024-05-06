@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import List, Any
 
 
 class AbstractRepository(ABC):
     """
     A base class representing an abstract repository that defines common database operations.
 
-    This class provides a template for repository classes which handle data transactions
+    This class provides a templates for repository classes which handle data transactions
     with a database for a specific entity or table. It enforces the implementation of
     basic CRUD operations along with additional retrieval methods. Each method is
     asynchronous, supporting asyncio for concurrent handling of database operations.
@@ -57,5 +58,17 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_list(self, limit: int = None, offset: int = None, **filter_by):
+    async def get_by_id(self, unit_id: int):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_list(
+        self,
+        filter_conditions: List[Any],
+        sorting_rule: str = "desc",
+        limit: int = None,
+        offset: int = None,
+        *args,
+        **kwargs
+    ):
         raise NotImplementedError

@@ -52,8 +52,8 @@ async def get_current_user(
     :raises: HTTPException
     """
     try:
-        token: Token = decode_access_token(token)
-        token_claims: Dict[str, Any] = token.claims
+        token_decode: Token = decode_access_token(token)
+        token_claims: Dict[str, Any] = token_decode.claims
         payload: TokenPayload = TokenPayload(**token_claims)
         if payload.exp < datetime.utcnow().timestamp():
             raise token_exception()
@@ -104,5 +104,5 @@ async def registration_user(user: UserCreate, db_session: AsyncSession) -> Union
     create_user_dict["is_superuser"] = False
     create_user_dict["registration_datetime"] = datetime.utcnow()
     create_user_dict["last_login_datetime"] = None
-    user: User = await user_repo.create(data=create_user_dict)
-    return user.to_model_schema()
+    user_new: User = await user_repo.create(data=create_user_dict)
+    return user_new.to_model_schema()

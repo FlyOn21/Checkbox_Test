@@ -52,8 +52,10 @@ class ReadCheck(CheckCreate):
         title="ReadCheck",
         from_attributes=True,
     )
-    check_id: int = Field(
+    id: int = Field(
         title="checkId",
+        validation_alias="id",
+        serialization_alias="check_id",
         description="The check id",
         example="1",
     )
@@ -61,13 +63,13 @@ class ReadCheck(CheckCreate):
     check_total_price: Decimal = Field(
         title="checkTotalPrice",
         description="The check total price",
-        example="100.00456",
+        example="100.00",
     )
 
     check_rest: Decimal = Field(
-        title="checkExchange",
+        title="checkRest",
         description="The check exchange",
-        example="0.00456",
+        example="0.12",
     )
 
     check_products: List["ReadSoldProduct"] = Field(
@@ -84,6 +86,8 @@ class ReadCheck(CheckCreate):
                 "sold_quantity": "1.0",
                 "sold_datetime": "2021-10-01T00:00:00",
                 "sold_total_price": "100.00",
+                "sold_check_id": "1",
+                "sold_stock_id": "1",
             }
         ],
     )
@@ -167,6 +171,12 @@ class SoldProductCreate(BaseModel):
         example="1",
     )
 
+    sold_product_id: UUID = Field(
+        title="soldProductId",
+        description="The sold product identifier",
+        example="86e03105-324b-4e20-a3db-7caa0fe3d3b4",
+    )
+
     sold_stock_id: int = Field(
         title="soldStockId",
         description="The sold product stock id",
@@ -184,8 +194,10 @@ class ReadSoldProduct(SoldProductCreate):
         from_attributes=True,
     )
     id: int = Field(
-        title="soldProductId",
-        description="The sold product id",
+        title="soldId",
+        serialization_alias="sold_id",
+        validation_alias="id",
+        description="The sold id",
         example="1",
     )
 
@@ -226,8 +238,10 @@ class StockReadWithSales(StockCreate):
         title="StockCheckRead",
         from_attributes=True,
     )
-    stock_id: int = Field(
+    id: int = Field(
         title="stockId",
+        validation_alias="id",
+        serialization_alias="id",
         description="The stock id",
         example="1",
     )
@@ -256,14 +270,17 @@ class ReadStockWithoutSales(StockCreate):
     """
 
     model_config = ConfigDict(
-        title="ReadStockWithoutCheck",
+        title="ReadStockWithoutSales",
         from_attributes=True,
     )
-    stock_id: int = Field(
+    id: int = Field(
         title="stockId",
+        serialization_alias="id",
+        validation_alias="id",
         description="The stock id",
         example="1",
     )
+
 
 class StockUpdate(BaseModel):
     """
@@ -280,9 +297,8 @@ class StockUpdate(BaseModel):
         example="100.0",
     )
     stock_last_update: datetime = Field(
-        title="stockLastUpdateUTC",
-        description="The stock last update datetime",
-        example="2021-10-01T00:00:00")
+        title="stockLastUpdateUTC", description="The stock last update datetime", example="2021-10-01T00:00:00"
+    )
 
 
 class ReadStock(StockCreate):
@@ -296,11 +312,12 @@ class ReadStock(StockCreate):
     )
     stock_id: int = Field(
         title="stockId",
+        validation_alias="id",
         description="The stock id",
         example="1",
     )
 
-    checks: Optional[List["StockReadWithSales"]] = Field(
+    sales: Optional[List["StockReadWithSales"]] = Field(
         title="checks",
         description="The checks",
         example=[{"check_id": "1"}],
@@ -354,6 +371,8 @@ class ReadProductPrice(ProductPriceCreate):
     )
     price_id: int = Field(
         title="productPriceId",
+        alias="id",
+        validation_alias="id",
         description="The product price id",
         example="1",
     )
@@ -405,8 +424,10 @@ class ReadProduct(ProductCreate):
         title="ReadProduct",
         from_attributes=True,
     )
-    product_id: int = Field(
+    id: int = Field(
         title="productId",
+        validation_alias="id",
+        serialization_alias="product_id",
         description="The product id",
         example="1",
     )
@@ -464,8 +485,10 @@ class ReadUserEssence(UserEssenceCreate):
         title="ReadUserEssence",
         from_attributes=True,
     )
-    essence_id: int = Field(
+    id: int = Field(
         title="userEssenceId",
+        validation_alias="id",
+        serialization_alias="essence_id",
         description="The user essence id",
         example="1",
     )
