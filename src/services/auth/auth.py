@@ -1,21 +1,16 @@
-from fastapi import Depends
+from datetime import datetime
 from typing import Dict, Union, Any, Annotated
 
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 from joserfc.errors import BadSignatureError
 from joserfc.jwt import Token
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.database_connect import get_db
 from src.models.user_model import User
 from src.repositories.user_repository import UsersRepository
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordBearer
-from datetime import datetime
-
-from src.services.auth.auth_utils import decode_access_token, get_password_hash, verify_password, create_access_token
-from src.services.auth.schemas.user_auth import UserRead, JWTToken, TokenPayload, UserCreate, HTTPExceptionModel
-
-from src.utils.logging.set_logging import set_logger
 from src.services.auth.auth_http_exceptions import (
     user_not_found,
     password_incorrect,
@@ -23,8 +18,8 @@ from src.services.auth.auth_http_exceptions import (
     token_exception,
     user_is_not_active,
 )
-
-logger = set_logger()
+from src.services.auth.auth_utils import decode_access_token, get_password_hash, verify_password, create_access_token
+from src.services.auth.schemas.user_auth import UserRead, JWTToken, TokenPayload, UserCreate, HTTPExceptionModel
 
 # Dependency
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -61,7 +56,6 @@ async def get_current_user(
             raise token_exception()
         return payload
     except (BadSignatureError, ValidationError) as ex:
-        logger.error(ex)
         raise token_exception()
 
 

@@ -16,10 +16,7 @@ from src.services.checks.check_print import print_receipt
 from src.services.checks.get_check import get_user_checks
 from src.services.checks.schemas.check_create_query_schema import QueryCheck, AnswerCheck
 from src.services.checks.schemas.check_get_schema import BaseGetCheck
-from src.utils.logging.set_logging import set_logger
 from src.settings.checkbox_settings import settings
-
-logger = set_logger()
 
 check_router = routing.APIRouter(prefix="/check", tags=["check"])
 DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"

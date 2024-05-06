@@ -1,10 +1,5 @@
-from typing import TypeVar, Generic
-
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from src.utils.logging.set_logging import set_logger
-
-logger = set_logger("WARNING")
 
 
 class Base(DeclarativeBase):

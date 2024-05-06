@@ -1,20 +1,13 @@
 from fastapi import FastAPI
-
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 from starlette.middleware.cors import CORSMiddleware
 
 from src.middleware.http_error_handling_middleware import ExceptionHandlerMiddleware
 from src.services.auth.auth_router import oauth_router
 from src.services.checks.check_router import check_router
-from src.utils.logging.set_logging import set_logger
 from src.settings.checkbox_settings import settings
-
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-
-
-from redis import asyncio as aioredis
-
-logger = set_logger()
 
 app = FastAPI(
     root_path=settings.api_prefix,
