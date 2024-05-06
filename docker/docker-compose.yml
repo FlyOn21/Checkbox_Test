@@ -1,26 +1,24 @@
 version: "3.7"
 services:
 
-  checkbox:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    image: youtubetapi:0.1
-    hostname: fastapi
-    ports:
-      - ${FASTAPI_INTERNAL_PORT}:${FASTAPI_EXTERNAL_PORT}
-    networks:
-      - sever_infrastructure
-    env_file:
-      - .env
-    volumes:
-      - ./server:/app/server
-    depends_on:
-      - pgadmin
-      - dbpsql
-      - celery
-      - flower
+#  checkbox:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    restart: unless-stopped
+#    image: youtubetapi:0.1
+#    hostname: fastapi
+#    ports:
+#      - ${FASTAPI_INTERNAL_PORT}:${FASTAPI_EXTERNAL_PORT}
+#    networks:
+#      - sever_infrastructure
+#    env_file:
+#      - .env
+#    volumes:
+#      - ./server:/app/server
+#    depends_on:
+#      - pgadmin
+#      - dbpsql
 
   dbpsql:
     image: postgres:13.14-bullseye
@@ -69,22 +67,22 @@ services:
     ports:
       - ${REDIS_INGRESS_PORT}:${REDIS_PORT}
     volumes:
-      - redis_logs:/data/logs
-  nginx:
-    build: ./nginx
-    container_name: nginx_checks
-    hostname: ${NGINX_HOST_NAME}
-    volumes:
-      - templates_nginx:/etc/nginx/templates
-    ports:
-      - ${NGINX_INGRESS_PORT}:${NGINX_CONTAINER_PORT}
-    environment:
-      NGINX_PORT: ${NGINX_CONTAINER_PORT}
-    depends_on:
-      - pgadmin
-      - dbpsql
-    networks:
-      - app_infrastructure
+      - cache:/data
+#  nginx:
+#    build: ./nginx
+#    container_name: nginx_checks
+#    hostname: ${NGINX_HOST_NAME}
+#    volumes:
+#      - templates_nginx:/etc/nginx/templates
+#    ports:
+#      - ${NGINX_INGRESS_PORT}:${NGINX_CONTAINER_PORT}
+#    environment:
+#      NGINX_PORT: ${NGINX_CONTAINER_PORT}
+#    depends_on:
+#      - pgadmin
+#      - dbpsql
+#    networks:
+#      - app_infrastructure
 
 networks:
   app_infrastructure:
@@ -94,5 +92,5 @@ volumes:
     name: postgres_data_prod
   templates_nginx:
     name: templates_nginx
-  redis_logs:
-    name: redis_logs
+  cache:
+    name: redis_cache

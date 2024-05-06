@@ -24,7 +24,6 @@ async def get_db() -> AsyncGenerator:
         try:
             yield session
             await session.commit()
-            print("Session committed")
         except SQLAlchemyError as sql_ex:
             logger.exception(sql_ex)
             await session.rollback()

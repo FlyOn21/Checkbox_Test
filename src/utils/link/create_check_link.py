@@ -15,7 +15,6 @@ async def get_check_link(check_identifier: UUID, request: Request) -> Url:
     :param request: Request: Request object.
     :return: str: Check link.
     """
-    pprint(request.scope.get("router").__dict__.get("routes"))
     root_path = request.scope.get("root_path")
     check_endpoint_path = None
     for route in request.scope.get("router").__dict__.get("routes"):

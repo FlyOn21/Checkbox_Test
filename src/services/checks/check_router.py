@@ -1,5 +1,4 @@
 from decimal import Decimal
-from pprint import pprint
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -8,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
+from fastapi_cache.decorator import cache
 
 from src.database.database_connect import get_db
 from src.services.auth.auth import get_current_user
@@ -17,6 +17,7 @@ from src.services.checks.check_print import print_receipt
 from src.services.checks.get_check import get_user_checks
 from src.services.checks.schemas.check_create_query_schema import QueryCheck, AnswerCheck
 from src.services.checks.schemas.check_get_schema import BaseGetCheck
+from src.utils.json.json_encoder import ORJsonCoder
 from src.utils.logging.set_logging import set_logger
 from src.settings.checkbox_settings import settings
 
@@ -48,6 +49,7 @@ async def create_check_endpoint(
     return await create_check(check_create_data, db, user, request)
 
 
+
 @check_router.get(
     "/checkinfo",
     response_model=BaseGetCheck,
@@ -55,6 +57,7 @@ async def create_check_endpoint(
     description="Get user checks info",
     tags=["check"],
 )
+@cache(expire=500, coder=ORJsonCoder)
 async def get_check_endpoint(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -114,6 +117,7 @@ async def get_check_endpoint(
     return result
 
 
+
 @check_router.get(
     "/printcheck",
     response_class=HTMLResponse,
@@ -122,6 +126,7 @@ async def get_check_endpoint(
     tags=["check"],
     name=settings.print_check_endpoint_name,
 )
+@cache(expire=1000, coder=ORJsonCoder)
 async def print_check_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     check_identifier: Annotated[

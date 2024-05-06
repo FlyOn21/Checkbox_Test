@@ -8,6 +8,12 @@ from src.services.checks.check_router import check_router
 from src.utils.logging.set_logging import set_logger
 from src.settings.checkbox_settings import settings
 
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+
+
+from redis import asyncio as aioredis
+
 logger = set_logger()
 
 app = FastAPI(
@@ -21,6 +27,13 @@ app = FastAPI(
 
 app.include_router(oauth_router)
 app.include_router(check_router)
+
+
+@app.on_event("startup")
+async def startup():
+    redis_url = settings.get_redis_url()
+    redis = aioredis.from_url(redis_url)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 
 origins = ["*"]

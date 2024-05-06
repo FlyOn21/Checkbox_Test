@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     postgres_password: SecretStr
     postgres_ingress_port: str
     # Redis settings
+    redis_host: str
+    redis_port: str
+    redis_ingress_port: str
     # FastAPI settings
     local_development: bool
     debug_mode: bool
@@ -79,6 +82,11 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
             f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db_name}"
         )
+
+    def get_redis_url(self) -> str:
+        if self.local_development:
+            return f"redis://{self.redis_host}:{self.redis_ingress_port}"
+        return f"redis://{self.redis_host}:{self.redis_port}"
 
 
 settings = Settings()

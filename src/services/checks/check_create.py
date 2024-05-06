@@ -158,7 +158,6 @@ async def update_stock(
             quantity_in_stock=product.product_stock.quantity_in_stock,
             stock_last_update=product.product_stock.stock_last_update,
         )
-        print(product)
         await stock_repo.update(product.product_stock.id, stock_to_update.dict())
 
 
