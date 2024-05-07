@@ -24,3 +24,18 @@ Open your command line interface and navigate to the root directory of the proje
 
 ```bash
 docker compose --env-file .env up
+```
+
+
+### For Testing the Application
+
+Open your command line interface and navigate to the root directory of the project. Run the following command:
+
+```bash
+pytest
+```
+
+### After testing the application, 
+Before deploying the application, you need  uncomment str 127 file src/services/checks/check_router.py for enable catch.
+
+

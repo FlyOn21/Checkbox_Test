@@ -17,6 +17,9 @@ from src.services.checks.get_check import get_user_checks
 from src.services.checks.schemas.check_create_query_schema import QueryCheck, AnswerCheck
 from src.services.checks.schemas.check_get_schema import BaseGetCheck
 from src.settings.checkbox_settings import settings
+from fastapi_cache.decorator import cache
+
+from src.utils.json.json_encoder import ORJsonCoder
 
 check_router = routing.APIRouter(prefix="/check", tags=["check"])
 DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"
@@ -121,7 +124,10 @@ async def get_check_endpoint(
         },
     },
 )
-# @cache(coder=ORJsonCoder) !!!! Uncomment this line to enable caching in production
+
+
+#!!!! Uncomment this line to enable caching in production
+# @cache(coder=ORJsonCoder)
 async def print_check_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     check_identifier: Annotated[
