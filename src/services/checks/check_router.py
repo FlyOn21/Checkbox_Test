@@ -10,7 +10,7 @@ from starlette.responses import HTMLResponse
 
 from src.database.database_connect import get_db
 from src.services.auth.auth import get_current_user
-from src.services.auth.schemas.user_auth import HTTPExceptionModel, TokenPayload
+from src.services.auth.schemas.user_auth import HTTPExceptionModel, TokenPayload, UnauthorizedError
 from src.services.checks.check_create import create_check
 from src.services.checks.check_print import print_receipt
 from src.services.checks.get_check import get_user_checks
@@ -35,6 +35,7 @@ DATE_PATTERN = r"^\d{4}-([0][1-9]|1[0-2])-([0][1-9]|[1-2]\d|3[01])$"
             "model": HTTPExceptionModel,
             "description": "Error creating error massages",
         },
+        401: {"model": UnauthorizedError, "description": "Not authenticated"},
     },
 )
 async def create_check_endpoint(
@@ -51,6 +52,9 @@ async def create_check_endpoint(
     response_model=BaseGetCheck,
     status_code=status.HTTP_200_OK,
     description="Get user checks info",
+    responses={
+        401: {"model": UnauthorizedError, "description": "Not authenticated"},
+    },
 )
 async def get_check_endpoint(
     request: Request,

@@ -151,3 +151,12 @@ class HTTPExceptionModel(BaseModel):
     message: List[str] | str = Field(
         title="messages", description="The error description", example="[Error message1, Error message2]"
     )
+
+
+class UnauthorizedError(BaseModel):
+    """
+    Represents an unauthorized error model that provides detailed information about an error.
+    """
+
+    model_config = ConfigDict(title="UnauthorizedError")
+    detail: str = Field(title="detail", description="The error message", example="Not authenticated")
