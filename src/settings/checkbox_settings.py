@@ -79,14 +79,9 @@ class Settings(BaseSettings):
         If running in a local development environment, it connects via the local ingress port.
         Otherwise, it uses the configured PostgreSQL host and port.
         """
-        if self.local_development:
-            return (
-                f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
-                f"127.0.0.1:{self.postgres_ingress_port}/{self.postgres_test_db_name}"
-            )
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password.get_secret_value()}@"
-            f"{self.postgres_host}:{self.postgres_port}/{self.postgres_test_db_name}"
+            f"127.0.0.1:{self.postgres_ingress_port}/{self.postgres_test_db_name}"
         )
 
     def get_db_url(self) -> str:
